@@ -6,11 +6,11 @@ import json
 import datetime
 import hashlib
 import streamlit as st
-from google import genai
+import google.generativeai as genai
 
 #api key load
 load_dotenv()
-API_KEY = os.getenv("GOOGLE_API_KEY")
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 if not API_KEY:
     st.stop()
 
