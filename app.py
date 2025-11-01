@@ -1,5 +1,4 @@
 #import content
-from dotenv import load_dotenv
 import os
 import random
 import json
@@ -9,16 +8,9 @@ import streamlit as st
 import google.generativeai as genai
 
 #api key load
-load_dotenv()
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-if not os.getenv("GOOGLE_API_KEY"):
-    st.stop()
-
-#gemini client initialize
 try:
-    gemini = genai.Client(api_key=API_KEY)
-except Exception as e:
-    st.error(f"error occured:{e}")
+    API_KEY = st.secrets("GOOGLE_API_KEY")
+except (KeyError, AttributeError)
     st.stop()
 
 #page config
@@ -51,20 +43,23 @@ def style_response(text):
 
 #log tracking fn
 def log_interaction(user_msg, ai_msg):
-    user_hash = hashlib.sha256(user_msg.encode()).hexdigest()[:12]
-    log_entry = {
-        "timestamp": datetime.datetime.now().isoformat(),
-        "user_hash": user_hash,
-        "user_length": len(user_msg),
-        "ai_length": len(ai_msg),
-        "model": "gemini-1.5-flash"
-    }
-    with open("eval_logs.jsonl", "a") as f:
-        f.write(json.dumps(log_entry) + "\n")
+    try:
+        user_hash = hashlib.sha256(user_msg.encode()).hexdigest()[:12]
+        log_entry = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "user_hash": user_hash,
+            "user_length": len(user_msg),
+            "ai_length": len(ai_msg),
+            "model": "gemini-2.5-flash"
+        }
+        with open("eval_logs.jsonl", "a") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except:
+        pass
  
 #user input fn
-def user_input_msg():
-    user_text = st.session_state.input_field.strip()
+def user_input_msg(user_text):
+    user_text = user_text.strip()
 
     st.session_state.messages.append({"role": "user", "content": user_text})
     
@@ -88,23 +83,26 @@ Chat history:
 
 Your response:"""
     
-model = genai.GenerativeModel("gemini-1.5-flash")
     #to get reply from gemini
-with st.spinner("Checking with Clara..."):
-    try:
-        response = model.generate_content(clara_prompt)
-        ai_reply = response.text
-        friendly_reply = style_response(ai_reply)
+    with st.spinner("Checking with Clara..."):
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=clara_prompt,
+                temperature = 0.7
+        )
+
+            ai_reply = response.text
+            friendly_reply = style_response(ai_reply)
             
-        log_interaction(user_text, ai_reply)
-        st.session_state.messages.append({"role": "assistant", "content": friendly_reply})
+            st.session_state.messages.append({"role": "assistant", "content": friendly_reply})
+            log_interaction(user_text, ai_reply)
+            
 
-    except Exception as error:
-        st.error(f"something went wrong: {error}")
-
-        st.session_state.input_field = ""
-
-
+        except Exception as error:
+            st.error(f"something went wrong: {error}")
+    st.rerun()
+    
 #homepage ui content
 st.markdown("## 👩🏻‍⚕️ **Clara** |  Smart Health Assistant")
 
@@ -121,9 +119,7 @@ with chat_container:
 
 user_input = st.chat_input(placeholder="Ask Clara... 💬")
 if user_input:
-    st.session_state.input_field = user_input
-    user_input_msg()
-    st.rerun()
+    user_input_msg(user_input)
 
 #sidebar for guidance
 with st.sidebar:
@@ -141,7 +137,7 @@ with st.sidebar:
     st.markdown("### ⚠️ **Note**")
 
     st.markdown("""
-    -  I'm your **Smart health Assistant, not a certified doctor**, consult a professional for serious concerns🌱
+    -  I’m your **Smart health Assistant, not a certified doctor**, consult a professional for serious concerns🌱
     """)
     
 
