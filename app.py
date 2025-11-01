@@ -9,7 +9,7 @@ import google.generativeai as genai
 
 #api key load
 try:
-    API_KEY = st.secrets("GOOGLE_API_KEY")
+    API_KEY = st.secrets["GOOGLE_API_KEY"]
 except (KeyError, AttributeError):
     st.stop()
 
