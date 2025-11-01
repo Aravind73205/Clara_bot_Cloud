@@ -57,7 +57,7 @@ def log_interaction(user_msg, ai_msg):
         "user_hash": user_hash,
         "user_length": len(user_msg),
         "ai_length": len(ai_msg),
-        "model": "gemini-2.5-flash"
+        "model": "gemini-1.5-flash"
     }
     with open("eval_logs.jsonl", "a") as f:
         f.write(json.dumps(log_entry) + "\n")
@@ -88,7 +88,7 @@ Chat history:
 
 Your response:"""
     
-model = genai.GenerativeModel("gemini-2.5-flash")
+model = genai.GenerativeModel("gemini-1.5-flash")
     #to get reply from gemini
 with st.spinner("Checking with Clara..."):
     try:
