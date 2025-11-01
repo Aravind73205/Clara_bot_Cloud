@@ -91,7 +91,8 @@ Your response:"""
                 contents=clara_prompt,
                 temperature = 0.7
         )
-
+            st.sidebar.markdown(f"**RAW RESPONSE:** {response}")
+            
             ai_reply = response.text
             friendly_reply = style_response(ai_reply)
             
