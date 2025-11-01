@@ -11,7 +11,7 @@ import google.generativeai as genai
 #api key load
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-if not API_KEY:
+if not os.getenv("GOOGLE_API_KEY"):
     st.stop()
 
 #gemini client initialize
