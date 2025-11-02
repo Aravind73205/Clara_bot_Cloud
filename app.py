@@ -109,7 +109,6 @@ Your response:"""
 
         except Exception as error:
             st.error(f"something went wrong: {error}")
-    st.rerun()
     
 #homepage ui content
 st.markdown("## 👩🏻‍⚕️ **Clara** |  Smart Health Assistant")
