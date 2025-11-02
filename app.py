@@ -15,7 +15,7 @@ except (KeyError, AttributeError):
 
 #gemini client
 try:
-    client = genai.Client(api_key=API_KEY)
+    genai.configure(api_key=API_KEY)
 except Exception as e:
     st.error(f"Error initializing Gemini client: {e}")
     st.stop()
@@ -93,7 +93,7 @@ Your response:"""
     #to get reply from gemini
     with st.spinner("Checking with Clara..."):
         try:
-            response = client.models.generate_content(
+            response = genai.generate_content(
                 model="gemini-2.5-flash",
                 contents=clara_prompt,
                 temperature = 0.7

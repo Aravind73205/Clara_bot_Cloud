@@ -1,1 +1,4 @@
 eval_logs.jsonl
+.streamlit/secrets.toml
+venv/
+.venv/
