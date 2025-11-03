@@ -1,11 +1,6 @@
 #import content
-import os
 import random
-import json
-import datetime
-import hashlib
 import streamlit as st
-import traceback
 import google.generativeai as genai
 
 
@@ -45,9 +40,14 @@ model = genai.GenerativeModel(
     system_instruction=clara_prompt
 )
 
-def extract_message_data(message):
-    """Safely extracts role and text content from either a dict or a Content object."""
+if "chat_session" not in st.session_state:
+    st.session_state.chat_session = model.start_chat(history=[])
+    st.session_state.chat_session.history.append({
+        "role": "model",
+        "parts": [{"text": "Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"}]
+    })
 
+def extract_message_data(message):
     if isinstance(message, dict):
         role = message.get("role")
         content = message.get("parts", [{}])[0].get("text", "[Content Error]")
@@ -56,27 +56,8 @@ def extract_message_data(message):
         role = message.role
         content = message.parts[0].text if message.parts and message.parts[0].text else "[Reply loading...]"
     
-    # Standardize the role for Streamlit
     display_role = "assistant" if role == "model" else role
     return display_role, content
-
-def append_greeting():
-    if not st.session_state.chat_session.history:  
-        st.session_state.chat_session.history.append(
-            {  
-                "role": "model",
-                "parts": [
-                    { "text": "Hi! I'm Clara, your AI health companion 😇. How are you feeling today?" }
-                ]
-            }
-        )
-
-if "chat_session" not in st.session_state:
-    st.session_state.chat_session = model.start_chat(
-        history=[]  
-    )
-    append_greeting()
-
 
 #custom response
 def style_response(text):
@@ -91,13 +72,23 @@ def style_response(text):
 
     return text
 
-#user input fn
-def user_input_msg(user_text):
-    user_text = user_text.strip()
-    
+st.markdown("## 👩🏻‍⚕️ **Clara** | Smart Health Assistant")
+
+# Chat container
+chat_container = st.container()
+with chat_container:
+    for message in st.session_state.chat_session.history:
+        role, content = extract_message_data(message)
+        if content:
+            with st.chat_message(role):
+                st.markdown(content if role == "user" else style_response(content))
+
+#input content
+user_input = st.chat_input(placeholder="Ask Clara... 💬")
+if user_input:
     st.session_state.chat_session.history.append({
         "role": "user",
-        "parts": [{"text": user_text}]
+        "parts": [{"text": user_input}]
     })
     # to get reply from gemini
     with st.chat_message("assistant"):
@@ -105,7 +96,7 @@ def user_input_msg(user_text):
         try:
             with st.spinner("Checking with Clara..."):
                 response = st.session_state.chat_session.send_message(
-                    user_text,
+                    user_input,
                     generation_config=genai.types.GenerationConfig(
                         temperature=0.7
                     ),
@@ -115,25 +106,6 @@ def user_input_msg(user_text):
 
         except Exception as e:
             st.error("Something went wrong") 
-
-#homepage ui content
-st.markdown("## 👩🏻‍⚕️ **Clara** |  Smart Health Assistant")
-
-chat_container = st.container()
-with chat_container:
-    for message in st.session_state.chat_session.history:
-        role, content = extract_message_data(message)
-
-        if content:
-            with st.chat_message(role):
-                if role == "user":
-                    st.markdown(f"**You:** {content}")
-                else:
-                    st.markdown(f"**Clara:** {style_response(content)}")
-
-user_input = st.chat_input(placeholder="Ask Clara... 💬")
-if user_input:
-    user_input_msg(user_input)
 
 #sidebar for guidance
 with st.sidebar:
@@ -163,4 +135,7 @@ with st.sidebar:
         st.session_state.chat_session = model.start_chat(
             history=[]
         )
-        append_greeting()
+        st.session_state.chat_session.history.append({
+            "role": "model",
+            "parts": [{"text": "Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"}]
+        })
