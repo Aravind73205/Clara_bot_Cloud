@@ -4,10 +4,19 @@ import random
 import json
 import datetime
 import hashlib
+from urllib import response
 import streamlit as st
 import traceback
-import google.genai as genai  
-from google.genai import types 
+import google.generativeai as genai
+from google.generativeai import types
+
+
+#page config
+st.set_page_config(
+    page_title="MediBot - Your Health Assistant",
+    layout="centered",
+    initial_sidebar_state="expanded"
+)
 
 #api key load
 try:
@@ -17,18 +26,8 @@ try:
     model_name = 'gemini-2.5-flash'
     MODEL = genai.GenerativeModel(model_name)
 
-except (KeyError, AttributeError, Exception) as e:
+except KeyError:
     st.stop()
-
-#page config
-st.set_page_config(
-    page_title="MediBot - Your Health Assistant",
-    layout="centered",
-    initial_sidebar_state="expanded"
-)
-
-client = genai.Client()
-
 
 #prompt for clara
 clara_prompt = f"""You are Mrs.Clara, an experienced AI powered family doctor, Your goal is to understand patient issues and support them.
@@ -46,9 +45,8 @@ Key Notes:
 
 #reply from gemini
 if "chat_session" not in st.session_state:
-    st.session_state.chat_session = client.chats.create(
-        model=model_name,
-    )
+    model = genai.GenerativeModel(model_name)
+    st.session_state.chat_session = model.start_chat(history=[])
 
     # Manual first message from Clara
 if len(st.session_state.chat_session.history) == 0:
@@ -104,14 +102,13 @@ def user_input_msg(user_text):
     with st.spinner("Checking with Clara..."):
         try:
             response = st.session_state.chat_session.send_message(
-                message = user_text,
-                config=types.GenerateContentConfig(
-                    temperature=0.7,
-                    system_instruction=clara_prompt  
-                )
-            )
-
-            ai_reply = response.content.parts[0].text
+                user_text,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.7
+                ),
+                system_instruction=clara_prompt
+            )     
+            ai_reply = response.text
             log_interaction(user_text, ai_reply)
 
             st.success("Clara's got you! 💬")  # Quick feedback before refresh
@@ -168,10 +165,10 @@ with st.sidebar:
     #for clear chat
     st.markdown("---")
     if st.button("🗑️ **Clear Chat**", use_container_width=True):
-         st.session_state.chat_session = client.chats.create(
-             model=model_name,
-            )
-         
+        model = genai.GenerativeModel(model_name)
+        st.session_state.chat_session = model.start_chat(history=[])
+        st.rerun()
+
     if len(st.session_state.chat_session.history) == 0:
         st.session_state.chat_session.history.append(
             types.Content(
@@ -179,5 +176,4 @@ with st.sidebar:
                 parts=[types.Part.from_text("Hi! I'm Clara, your AI health companion 😇. How are you feeling today?")]
             )
         )
-        
         st.rerun()
