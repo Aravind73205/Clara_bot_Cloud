@@ -42,10 +42,11 @@ model = genai.GenerativeModel(
 
 if "chat_session" not in st.session_state:
     st.session_state.chat_session = model.start_chat(history=[])
-    st.session_state.chat_session.history.append({
-        "role": "model",
-        "parts": [{"text": "Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"}]
-    })
+
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "assistant", "text": "Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"}
+    ]
 
 #custom response
 def style_response(text):
@@ -61,13 +62,9 @@ def style_response(text):
     return text
 
 st.markdown("## 👩🏻‍⚕️ **Clara** | Smart Health Assistant")
-
-# Chat container
-chat_container = st.container()
-with chat_container:
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["text"])
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["text"])
 
 if prompt := st.chat_input("Ask Clara... 💬"):
     st.chat_message("user").markdown(prompt)
@@ -116,4 +113,4 @@ with st.sidebar:
         st.session_state.messages = [
             {"role": "assistant", "text": "Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"}
         ]
-        st.rerun()
+        st.experimental_rerun()
