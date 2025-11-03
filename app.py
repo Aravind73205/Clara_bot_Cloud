@@ -13,6 +13,9 @@ try:
     API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=API_KEY)
 
+    model_name = 'gemini-2.5-flash'
+    MODEL = genai.GenerativeModel(model_name)
+
 except (KeyError, AttributeError, Exception) as e:
     st.stop()
 
@@ -23,13 +26,41 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-#page default msg
-Welcome_msg = {
-    "role": "assistant",
-    "content": "Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"
-}
+#prompt for clara
+clara_prompt = f"""You are Mrs.Clara, an experienced AI powered family doctor, Your goal is to understand patient issues and support them.
 
-st.session_state.setdefault("messages", [Welcome_msg])
+Key Notes:
+ Do not prescribe drugs or specific treatments beyond basic first aid
+ If user Asked to generate Images(eg: show the image of how that allergy looks like), refuse politely.
+ Flag sensitive topics (eg: if "suicide", "self-harm", "abuse", "violence", etc.), "Escalate: Advise immediate professional help."
+ At the end of the chat:
+  Summarize the coversation in 3-5 bullet points. 
+  Ask: "Did this help? (Yes/No)" and suggest next steps.
+
+ You are not a replacement for inperson care, always guide toward professional consulting when needed.
+"""
+
+#role for user and gemini
+def role_Assign(role):
+    if role == "model":
+        return "assistant"
+    return role
+
+#reply from gemini
+if "chat_session" not in st.session_state:
+    st.session_state.chat_session = MODEL.start_chat(
+        history=[],
+        config=genai.types.GenerateContentConfig(
+            system_instruction=clara_prompt
+        )
+    )
+
+    # Manual first message from Clara
+if len(st.session_state.chat_session.history) == 0:
+    st.session_state.chat_session.history.append(genai.types.Content(
+        role="model", 
+        parts=[genai.types.Part.from_text("Hi! I'm Clara, your AI health companion 😇. How are you feeling today?")]
+    ))
 
 #custom response
 def style_response(text):
@@ -55,79 +86,50 @@ def log_interaction(user_msg, ai_msg):
             "ai_length": len(ai_msg),
             "model": "gemini-2.5-flash"
         }
-        with open("eval_logs.jsonl", "a") as f:
+        log_file = "/tmp/eval_logs.jsonl"  # for Cloud writing
+        with open(log_file, "a") as f:
             f.write(json.dumps(log_entry) + "\n")
-    except:
-        pass
+    except Exception as log_err:
+        print(f"Logging failed: {log_err}")
  
 #user input fn
 def user_input_msg(user_text):
     user_text = user_text.strip()
 
-    st.session_state.messages.append({"role": "user", "content": user_text})
-    
-    #to store chat history
-    recent_chat = st.session_state.messages[-20:]
-    chat_prompt = "\n".join([f"{msg['role'].title()}: {msg['content']}" for msg in recent_chat])
-    
-    #prompt for clara
-    clara_prompt = f"""You are Mrs.Clara, an experienced AI powered family doctor, Your goal is to understand patient issues and support them.
-
-Important Instructions:
- Do not prescribe drugs or specific treatments beyond basic first aid
- At the end of the chat:
-  Send them key points of the Conversation(like summary)
-  And Ask them did i solve your issue?
-
- You are not a replacement for inperson care, always guide toward professional consulting when needed.
-
-Chat history:
-{chat_prompt}
-
-Your response:"""
-    
     # to get reply from gemini
     with st.spinner("Checking with Clara..."):
         try:
-            response = genai.generate_content(
-                model="gemini-2.5-flash",
-                contents=clara_prompt,
-                temperature=0.7,
+            response = st.session_state.chat_session.send_message(
+                user_text,
+                config=genai.types.GenerateContentConfig(temperature=0.7)
             )
 
-            # show raw response in sidebar for debugging
-            try:
-                st.sidebar.markdown(f"**RAW RESPONSE:** {response}")
-            except Exception:
-                pass
-
             ai_reply = response.text
-            friendly_reply = style_response(ai_reply)
-
-            st.session_state.messages.append({"role": "assistant", "content": friendly_reply})
             log_interaction(user_text, ai_reply)
 
-        except Exception as error:
-            tb = traceback.format_exc()
-            st.error("Something went wrong while contacting the language model. See sidebar for details.")
-            st.sidebar.text("Error:\n" + str(error))
-            st.sidebar.text("Traceback:\n" + tb)
+            st.success("Clara's got you! 💬")  # Quick feedback before refresh
+            st.rerun()
 
-    st.rerun()
+        except Exception as e:
+            tb = traceback.format_exc()
+            st.error("Something went wrong")
+            st.sidebar.text("Error:\n" + str(e))
+            st.sidebar.text("Traceback:\n" + tb)
 
 #homepage ui content
 st.markdown("## 👩🏻‍⚕️ **Clara** |  Smart Health Assistant")
 
 chat_container = st.container()
 with chat_container:
-    for message in st.session_state.messages[-50:]:
-        content = message["content"]
-        role = message["role"]
+    for message in st.session_state.chat_session.history:
+        role = role_Assign(message.role)
+        content = message.parts[0].text
+
         with st.chat_message(role):
             if role == "user":
                 st.markdown(f"**You:** {content}")
             else:
-                st.markdown(f"**Clara:** {content}")
+                st.markdown(f"**Clara:** {style_response(content)}")
 
 user_input = st.chat_input(placeholder="Ask Clara... 💬")
 if user_input:
@@ -159,7 +161,15 @@ with st.sidebar:
     #for clear chat
     st.markdown("---")
     if st.button("🗑️ **Clear Chat**", use_container_width=True):
-        st.session_state.messages = [Welcome_msg]
-        if "input_field" in st.session_state:
-            st.session_state.input_field = ""
-        st.rerun()
+       st.session_state.chat_session = MODEL.start_chat(
+            history=[],
+            config=genai.types.GenerateContentConfig(
+                system_instruction=clara_prompt
+            )
+        )
+       st.session_state.chat_session.history.append(genai.types.Content(
+            role="model", 
+            parts=[genai.types.Part.from_text("Hi! I'm Clara, your AI health companion 😇. How are you feeling today?")]
+        ))
+        
+       st.rerun()
