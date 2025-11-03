@@ -51,7 +51,7 @@ if "chat_session" not in st.session_state:
 
 def append_greeting():
     """Append Clara's initial greeting if history is empty."""
-    if len(st.session_state.chat_session.history) == 1:
+    if len(st.session_state.chat_session.history) == 0:
         st.session_state.chat_session.history.append({
             "role": "model",
             "parts": ["Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"]
@@ -122,8 +122,11 @@ st.markdown("## 👩🏻‍⚕️ **Clara** |  Smart Health Assistant")
 chat_container = st.container()
 with chat_container:
     for message in st.session_state.chat_session.history:
-        role = "assistant" if message["role"] == "model" else message["role"]
-        content = message["parts"][0] if message.get("parts") else "[Reply loading...]"
+
+        role = "assistant" if message.role == "model" else message.role
+
+        content = message.parts[0].text if message.parts else "[Reply loading...]"
+
         with st.chat_message(role):
             if role == "user":
                 st.markdown(f"**You:** {content}")
