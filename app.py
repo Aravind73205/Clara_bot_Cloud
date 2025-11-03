@@ -44,9 +44,14 @@ Key Notes:
  You are not a replacement for inperson care, always guide toward professional consulting when needed.
 """
 
+if "chat_session" not in st.session_state:
+    st.session_state.chat_session = model.start_chat(
+        history=[{"role": "system", "parts": [clara_prompt]}]
+    )
+
 def append_greeting():
     """Append Clara's initial greeting if history is empty."""
-    if len(st.session_state.chat_session.history) == 0:
+    if len(st.session_state.chat_session.history) == 1:
         st.session_state.chat_session.history.append({
             "role": "model",
             "parts": ["Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"]
@@ -94,7 +99,6 @@ def user_input_msg(user_text):
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.7
                 ),
-                system_instruction=clara_prompt
             )     
             ai_reply = response.text
             log_interaction(user_text, ai_reply)
