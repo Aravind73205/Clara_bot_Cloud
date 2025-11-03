@@ -113,4 +113,4 @@ with st.sidebar:
         st.session_state.messages = [
             {"role": "assistant", "text": "Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"}
         ]
-        st.experimental_rerun()
+        st.rerun()
