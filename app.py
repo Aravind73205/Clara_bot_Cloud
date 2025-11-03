@@ -47,18 +47,6 @@ if "chat_session" not in st.session_state:
         "parts": [{"text": "Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"}]
     })
 
-def extract_message_data(message):
-    if isinstance(message, dict):
-        role = message.get("role")
-        content = message.get("parts", [{}])[0].get("text", "[Content Error]")
-
-    else:
-        role = message.role
-        content = message.parts[0].text if message.parts and message.parts[0].text else "[Reply loading...]"
-    
-    display_role = "assistant" if role == "model" else role
-    return display_role, content
-
 #custom response
 def style_response(text):
     starters = ["Hmm", "Okay", "Alright,"]
@@ -77,35 +65,25 @@ st.markdown("## 👩🏻‍⚕️ **Clara** | Smart Health Assistant")
 # Chat container
 chat_container = st.container()
 with chat_container:
-    for message in st.session_state.chat_session.history:
-        role, content = extract_message_data(message)
-        if content:
-            with st.chat_message(role):
-                st.markdown(content if role == "user" else style_response(content))
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["text"])
 
-#input content
-user_input = st.chat_input(placeholder="Ask Clara... 💬")
-if user_input:
-    st.session_state.chat_session.history.append({
-        "role": "user",
-        "parts": [{"text": user_input}]
-    })
+if prompt := st.chat_input("Ask Clara... 💬"):
+    st.chat_message("user").markdown(prompt)
+    st.session_state.messages.append({"role": "user", "text": prompt})
+
     # to get reply from gemini
     with st.chat_message("assistant"):
-        typing_placeholder = st.empty()
-        try:
-            with st.spinner("Checking with Clara..."):
-                response = st.session_state.chat_session.send_message(
-                    user_input,
-                    generation_config=genai.types.GenerationConfig(
-                        temperature=0.7
-                    ),
-                ) 
-            ai_reply = response.text     
-            typing_placeholder.markdown(style_response(response.text))          
+        with st.spinner("Clara is thinking..."):
+            try:
+                response = st.session_state.chat_session.send_message(prompt)
+                ai_reply = style_response(response.text.strip())
+                st.markdown(ai_reply)
+                st.session_state.messages.append({"role": "assistant", "text": ai_reply})
 
-        except Exception as e:
-            st.error("Something went wrong") 
+            except Exception as e:
+                st.error("⚠️ Something went wrong.")
 
 #sidebar for guidance
 with st.sidebar:
@@ -135,7 +113,7 @@ with st.sidebar:
         st.session_state.chat_session = model.start_chat(
             history=[]
         )
-        st.session_state.chat_session.history.append({
-            "role": "model",
-            "parts": [{"text": "Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"}]
-        })
+        st.session_state.messages = [
+            {"role": "assistant", "text": "Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"}
+        ]
+        st.rerun()
