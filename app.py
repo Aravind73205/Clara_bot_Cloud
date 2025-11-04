@@ -37,10 +37,10 @@ model_name = "gemini-2.5-flash"
 model = genai.GenerativeModel(
     model_name=model_name,
     system_instruction=clara_prompt,
-    generation_config={"temperature": 0.3, "top_p": 0.9, "max_output_tokens": 1024}
+    generation_config={"temperature": 0.3, "max_output_tokens": 520}
 )
 
-#session state init
+#gemini to store msg history
 if "chat_session" not in st.session_state:
     st.session_state.chat_session = model.start_chat(history=[])
 
@@ -72,10 +72,12 @@ for msg in st.session_state.messages:
         st.markdown(msg["text"])
 
 #user input handling
-if user_input := st.chat_input("Ask Clara... 💬"):
-    st.chat_message("user").markdown(user_input)
-    st.session_state.messages.append({"role": "user", "text": user_input})
+user_input = st.chat_input("Ask Clara... 💬")   #or we can even write it as user_input := st.text_input("Ask Clara...") both are same
 
+if user_input:
+
+    st.session_state.messages.append({"role": "user", "text": user_input})
+    st.rerun()
     placeholder = st.empty()
 
     # to get reply from gemini
