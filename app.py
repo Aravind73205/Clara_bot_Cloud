@@ -114,7 +114,7 @@ with st.sidebar:
     
     
     st.markdown("---")
-    
+
     #clear chat button
     if st.button("🗑️ Clear Chat", use_container_width=True):
         st.session_state.chat_session = model.start_chat(
@@ -124,3 +124,5 @@ with st.sidebar:
             {"role": "assistant", "text": "Hi! I'm Clara, your AI health companion 😇. How are you feeling today?"}
         ]
         st.rerun()
+
+    st.markdown("---")
