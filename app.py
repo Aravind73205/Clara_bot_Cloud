@@ -78,22 +78,17 @@ if user_input:
     st.chat_message("user").markdown(user_input)
     st.session_state.messages.append({"role": "user", "text": user_input})
 
-    placeholder = st.empty()
-
     # to get reply from gemini
     with st.spinner("Clara is thinking..."):
         try:
             response = st.session_state.chat_session.send_message(user_input)
             ai_reply = style_response(response.text.strip())
-
-            with placeholder.container():
-                with st.chat_message("assistant"):
-                    st.markdown(ai_reply)
+        
 
             st.session_state.messages.append({"role": "assistant", "text": ai_reply})
 
         except Exception:
-            placeholder.error("⚠️ Something went wrong while Clara was thinking.")
+            st.error("⚠️ Something went wrong while Clara was thinking.")
 
 #sidebar for guidance
 with st.sidebar:
