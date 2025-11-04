@@ -77,7 +77,7 @@ user_input = st.chat_input("Ask Clara... 💬")   #or we can even write it as us
 if user_input:
 
     st.session_state.messages.append({"role": "user", "text": user_input})
-    st.rerun()
+    
     placeholder = st.empty()
 
     # to get reply from gemini
