@@ -13,8 +13,6 @@ She chats naturally, offers **common-sense health tips**, and encourages profess
 
 ## 📸 App Preview
 
-Add your app screenshot here (example):
-
 ![Clara Chatbot Screenshot](./assets/clara-screenshot.png)
 
 *(You can replace the above path with your actual screenshot location inside the repo, like `/images/clara-chat.png`)*
