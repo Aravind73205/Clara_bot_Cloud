@@ -86,7 +86,7 @@ if user_input:
         
 
             st.session_state.messages.append({"role": "assistant", "text": ai_reply})
-
+            st.rerun()
         except Exception:
             st.error("⚠️ Something went wrong while Clara was thinking.")
 
